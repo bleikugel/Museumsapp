@@ -4,6 +4,7 @@ import java.util.Locale;
 
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -26,7 +27,9 @@ public class MainActivity extends FragmentActivity implements
 
 	SectionsPagerAdapter mSectionsPagerAdapter;
 	ViewPager mViewPager;
-
+	private int campusCode = 0x808;
+	private int hqCode = 0x809;
+	private campusplan cp;
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -34,9 +37,10 @@ public class MainActivity extends FragmentActivity implements
 
 		final ActionBar actionBar = getActionBar();
 	
-		campusplan cp = new campusplan(this);
-		
-		
+		cp = new campusplan(this);
+		cp.showPicture(R.drawable.campusplan,campusCode);
+
+		/*
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 		actionBar.hide();
 		mSectionsPagerAdapter = new SectionsPagerAdapter(
@@ -59,6 +63,7 @@ public class MainActivity extends FragmentActivity implements
 					.setText(mSectionsPagerAdapter.getPageTitle(i))
 					.setTabListener(this));
 		}
+		*/
 	}
 
 	@Override
@@ -144,5 +149,24 @@ public class MainActivity extends FragmentActivity implements
 			return rootView;
 		}
 	}
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+	  if (resultCode == RESULT_OK && requestCode == campusCode) {
+	    if (data.hasExtra("coords")) {
+	    	int[] coords = data.getExtras().getIntArray("coords");
+	    	cp.setCurrentCoordinates(coords[0], coords[1]);
+	    	
+	    	double scX = (double)getResources().getDisplayMetrics().widthPixels;
+	    	double scY = (double)getResources().getDisplayMetrics().heightPixels;
+	    	
+	    	int curr = (cp.getCurrentBuildingByCoordinates(coords[0], coords[1], scX / 800, scY / 600));
+	    	
+	    	if(curr == 0)
+	    		cp.showPicture(R.drawable.hauptgebaeude,hqCode);
+	    	else cp.showPicture(R.drawable.campusplan,campusCode);
+	    }
+	  }
+	} 
 
 }

@@ -33,12 +33,13 @@ or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>na
     }
     public static final class drawable {
         public static final int campusplan=0x7f020000;
-        public static final int ic_launcher=0x7f020001;
-        public static final int logo=0x7f020002;
-        public static final int picasso_01=0x7f020003;
-        public static final int picasso_02=0x7f020004;
-        public static final int picasso_03=0x7f020005;
-        public static final int readme=0x7f020006;
+        public static final int hauptgebaeude=0x7f020001;
+        public static final int ic_launcher=0x7f020002;
+        public static final int logo=0x7f020003;
+        public static final int picasso_01=0x7f020004;
+        public static final int picasso_02=0x7f020005;
+        public static final int picasso_03=0x7f020006;
+        public static final int readme=0x7f020007;
     }
     public static final class id {
         public static final int action_settings=0x7f090003;
