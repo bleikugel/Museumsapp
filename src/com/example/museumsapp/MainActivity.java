@@ -33,8 +33,12 @@ public class MainActivity extends FragmentActivity implements
 		setContentView(R.layout.activity_main);
 
 		final ActionBar actionBar = getActionBar();
+	
+		campusplan cp = new campusplan(this);
+		
+		
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-
+		actionBar.hide();
 		mSectionsPagerAdapter = new SectionsPagerAdapter(
 				getSupportFragmentManager());
 
