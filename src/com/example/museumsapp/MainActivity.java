@@ -5,6 +5,7 @@ import java.util.Locale;
 import android.app.ActionBar;
 import android.app.FragmentTransaction;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
@@ -27,49 +28,25 @@ public class MainActivity extends FragmentActivity implements
 
 	SectionsPagerAdapter mSectionsPagerAdapter;
 	ViewPager mViewPager;
-	private int campusCode = 0x808;
-	private int hqCode = 0x809;
-	private campusplan cp;
+	private Controller ctrl; 
+	private int state = 0;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-
-		final ActionBar actionBar = getActionBar();
+		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+		//final ActionBar actionBar = getActionBar();
 	
-		cp = new campusplan(this);
-		cp.showPicture(R.drawable.campusplan,campusCode);
+		ctrl = new Controller(this);
+		ctrl.setScales((double)getResources().getDisplayMetrics().widthPixels, (double)getResources().getDisplayMetrics().heightPixels);
 
-		/*
-		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
-		actionBar.hide();
-		mSectionsPagerAdapter = new SectionsPagerAdapter(
-				getSupportFragmentManager());
-
-		mViewPager = (ViewPager) findViewById(R.id.pager);
-		mViewPager.setAdapter(mSectionsPagerAdapter);
-
-
-		mViewPager.setOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
-					@Override
-					public void onPageSelected(int position) {
-						actionBar.setSelectedNavigationItem(position);
-					}
-				});
-
-		for (int i = 0; i < mSectionsPagerAdapter.getCount(); i++) 
-		{
-			actionBar.addTab(actionBar.newTab()
-					.setText(mSectionsPagerAdapter.getPageTitle(i))
-					.setTabListener(this));
-		}
-		*/
 	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.main, menu);
+		//getMenuInflater().inflate(R.menu.main, menu);
 		return true;
 	}
 
@@ -152,21 +129,17 @@ public class MainActivity extends FragmentActivity implements
 	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-	  if (resultCode == RESULT_OK && requestCode == campusCode) {
-	    if (data.hasExtra("coords")) {
-	    	int[] coords = data.getExtras().getIntArray("coords");
-	    	cp.setCurrentCoordinates(coords[0], coords[1]);
-	    	
-	    	double scX = (double)getResources().getDisplayMetrics().widthPixels;
-	    	double scY = (double)getResources().getDisplayMetrics().heightPixels;
-	    	
-	    	int curr = (cp.getCurrentBuildingByCoordinates(coords[0], coords[1], scX / 800, scY / 600));
-	    	
-	    	if(curr == 0)
-	    		cp.showPicture(R.drawable.hauptgebaeude,hqCode);
-	    	else cp.showPicture(R.drawable.campusplan,campusCode);
-	    }
+	  if (resultCode == RESULT_OK) {
+		  
+		  ctrl.showCurrentBuilding(requestCode, data);
 	  }
-	} 
+	  else if(resultCode == RESULT_CANCELED &&  requestCode != 0x808)
+	  {
+		  ctrl.showCurrentBuilding(requestCode, data);
+	  }
+	  else finish();
+
+	}
+	
 
 }

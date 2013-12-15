@@ -34,18 +34,20 @@ or to a theme attribute in the form "<code>?[<i>package</i>:][<i>type</i>:]<i>na
     public static final class drawable {
         public static final int campusplan=0x7f020000;
         public static final int hauptgebaeude=0x7f020001;
-        public static final int ic_launcher=0x7f020002;
-        public static final int logo=0x7f020003;
-        public static final int picasso_01=0x7f020004;
-        public static final int picasso_02=0x7f020005;
-        public static final int picasso_03=0x7f020006;
-        public static final int readme=0x7f020007;
+        public static final int hoersaalgebaeude=0x7f020002;
+        public static final int ic_launcher=0x7f020003;
+        public static final int logo=0x7f020004;
+        public static final int picasso_01=0x7f020005;
+        public static final int picasso_02=0x7f020006;
+        public static final int picasso_03=0x7f020007;
+        public static final int readme=0x7f020008;
     }
     public static final class id {
-        public static final int action_settings=0x7f090003;
-        public static final int imageView1=0x7f090000;
-        public static final int pager=0x7f090001;
-        public static final int section_label=0x7f090002;
+        public static final int action_settings=0x7f090004;
+        public static final int frl1=0x7f090000;
+        public static final int imageView1=0x7f090001;
+        public static final int pager=0x7f090002;
+        public static final int section_label=0x7f090003;
     }
     public static final class layout {
         public static final int activity_generic=0x7f030000;
