@@ -33,6 +33,10 @@
             android:label="@string/title_activity_generic"
             >
         </activity>
+                <activity 
+            android:name=".PictureInfoActivity"
+            >
+        </activity>
     </application>
 
 </manifest>

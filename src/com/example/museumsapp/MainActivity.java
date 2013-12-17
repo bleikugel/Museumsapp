@@ -130,12 +130,11 @@ public class MainActivity extends FragmentActivity implements
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 	  if (resultCode == RESULT_OK) {
-		  
-		  ctrl.showCurrentBuilding(requestCode, data);
+		  ctrl.showCurrentBuildingOrPicture(requestCode, data);
 	  }
 	  else if(resultCode == RESULT_CANCELED &&  requestCode != 0x808)
 	  {
-		  ctrl.showCurrentBuilding(requestCode, data);
+		  ctrl.init();
 	  }
 	  else finish();
 

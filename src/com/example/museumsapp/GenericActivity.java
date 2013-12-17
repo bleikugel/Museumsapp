@@ -1,5 +1,10 @@
 package com.example.museumsapp;
 
+import java.io.InputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.Window;
@@ -12,6 +17,11 @@ import android.app.ActionBar.LayoutParams;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.BitmapFactory.Options;
+import android.graphics.drawable.Drawable;
 
 // Eine einfache generische Activity.
 // Flexibles darstellen von Bildern + Abfrage der TouchPosition.
@@ -19,14 +29,27 @@ public class GenericActivity extends Activity {
 
 	private int x;
 	private int y;
+	private double scX;
+	private double scY;
+	private double scalX;
+	private double scalY;
 	private FrameLayout fl = null;
 	private int result;
+	private List<Building> buildings;
+	private Building currentBuilding;
+	private Picture currentPicture;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
 		this.x = 0;
 		this.y = 0;  
+		this.buildings = new ArrayList<Building>();
+		this.scX = (double)getResources().getDisplayMetrics().widthPixels;
+		this.scY = (double)getResources().getDisplayMetrics().heightPixels;
+		this.currentBuilding = null;
+		this.currentPicture = null;
 		
 		Intent intent = getIntent();
 		if(intent.getBooleanExtra("Fullscreen", true)) setFullscreen();
@@ -36,12 +59,33 @@ public class GenericActivity extends Activity {
 		setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 		fl = (FrameLayout) findViewById(R.id.frl1);
 		// Hintergrund setzen
-		setBuildingPicture(intent.getIntExtra("Overview", -1));
+		
+		if(intent.getIntExtra("Overview", -1) != -1)
+			setBuildingPicture(intent.getIntExtra("Overview", -1));
+		else if(intent.getSerializableExtra("Building") != null)
+		{
+			Object obj =  (Object) intent.getSerializableExtra("Building");
+			if(obj instanceof Building)
+			{
+				currentBuilding = (Building) obj;
+				setBuildingPicture(((Building)obj).getBitmapID());
+			}
+		}
+		
+	    if(intent.getBooleanExtra("BuildingsBool", false))
+		{
+			Object[] objArray =  (Object[]) intent.getSerializableExtra("Buildings");
+			initClickableObjects(objArray);
+		}
+		
 		
 		// Die einzelnen Bilder setzen, falls vorhanden
-		if(intent.getIntExtra("PictureCounter", -1) > 0)
-			for(int i = 0; i< intent.getIntExtra("PictureCounter", -1); i++)
-				setPicture(intent.getIntExtra("Picture1", -1));
+		if(currentBuilding != null && currentBuilding.getPictures() != null && currentBuilding.getPictures().size() > 0)
+		{
+			for(Picture p : currentBuilding.getPictures())
+				setPicture(p);
+			
+		}
 	}
 	@Override
     protected void onResume() {
@@ -60,8 +104,36 @@ public class GenericActivity extends Activity {
 
 	    this.x = (int)event.getX();
 	    this.y = (int)event.getY();
-	    this.result = RESULT_OK;
-	    this.finish();
+	    int[] vec = new int[] {this.x,this.y};
+	    // Liste nach geklicktem Objekt durchsuchen
+	    if(buildings.size() > 0)
+	    {
+	    	
+	    	for(Building b : buildings)
+	    	{
+	    		if(isVectorInBoundaryBox(vec, b.getBoundarybox()[0][0], b.getBoundarybox()[0][1], b.getBoundarybox()[1][0], b.getBoundarybox()[1][1]))
+	    		{
+	    		    this.result = RESULT_OK;
+	    		    this.currentBuilding = b;
+	    		    this.currentPicture = null;
+	    		    this.finish();
+	    		}
+	    		
+	    	}
+	    }
+	    
+	    if(this.currentBuilding != null)
+    		for(Picture p : this.currentBuilding.getPictures())
+    		{
+	    		if(p.getBoundarybox() != null && isVectorInBoundaryBox(vec, p.getBoundarybox()[0][0], p.getBoundarybox()[0][1], p.getBoundarybox()[1][0], p.getBoundarybox()[1][1]))
+	    		{
+	    		    this.result = RESULT_OK;
+	    		    this.currentBuilding = null;
+	    		    this.currentPicture = p;
+	    		    this.finish();
+	    		}
+    		}
+	    	
 	return true;
 	}
 	
@@ -72,30 +144,42 @@ public class GenericActivity extends Activity {
 		params = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
 		params.leftMargin = 0;
 		params.topMargin = 0;
-			
+
 		ImageView image = new ImageView(this.getApplicationContext());
 		image.setImageDrawable(getResources().getDrawable(pictureID));
 		image.setScaleType(ScaleType.FIT_XY);
 
-		 
+		Options opts = new Options();
+		opts.inScaled = false;
+		Bitmap bm = BitmapFactory.decodeResource(getResources(), pictureID, opts);
+		
+		// Die Bilder sind meist kleiner oder groesser als das Display,
+		// daher Skalierung setzen.
+		this.scalX = this.scX / bm.getWidth() ;
+		this.scalY = this.scY / bm.getHeight() ;
 		fl.addView(image, params);
 	}
 	
-	public void setPicture(int pictureID)
+	public void setPicture(Picture p)
 	{
-        //ImageView iv = (ImageView) findViewById(R.id.imageView1);
-		//LayoutParams params = new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
-		//params.setMargins(100,75, 0,0);
-		//iv.setLayoutParams(params);
-        //iv.setImageResource(pictureID);	
-		if(pictureID == -1) return;
+		if(p.getPictureID() == -1) return;
 		FrameLayout.LayoutParams params;
 		params = new FrameLayout.LayoutParams(100, 100);
-		params.leftMargin = 0;
-		params.topMargin = 0;
+		params.leftMargin = (int)(p.getxCoord() * scalX);
+		params.topMargin = (int)(p.getyCoord() * scalY);
 		
 		ImageView image = new ImageView(this.getApplicationContext());
-		image.setImageDrawable(getResources().getDrawable(pictureID));
+		try
+		{
+			image.setImageBitmap(decodeSampledBitmapFromResource(getResources(), p.getPictureID(), 100, 100));
+			p.setBoundarybox(new int[][]{{p.getxCoord()+100,p.getyCoord()+100},{p.getxCoord(),p.getyCoord()}});
+		}
+		catch (OutOfMemoryError e)
+		{
+			System.gc();
+			image.setImageBitmap(decodeSampledBitmapFromResource(getResources(), p.getPictureID(), 50, 50));	
+			p.setBoundarybox(new int[][]{{p.getxCoord()+50,p.getyCoord()+50},{p.getxCoord(),p.getyCoord()}});
+		}
 		image.setScaleType(ScaleType.FIT_XY);
 
 		fl.addView(image, params);
@@ -109,15 +193,88 @@ public class GenericActivity extends Activity {
             WindowManager.LayoutParams.FLAG_FULLSCREEN);	
 	}
 	
+	public static Bitmap decodeSampledBitmapFromResource(Resources res, int resId,
+	        int reqWidth, int reqHeight) {
+
+	    // First decode with inJustDecodeBounds=true to check dimensions
+	    final BitmapFactory.Options options = new BitmapFactory.Options();
+	    options.inJustDecodeBounds = true;
+	    BitmapFactory.decodeResource(res, resId, options);
+
+	    // Calculate inSampleSize
+	    options.inSampleSize = calculateInSampleSize(options, reqWidth, reqHeight);
+
+	    // Decode bitmap with inSampleSize set
+	    options.inJustDecodeBounds = false;
+	    return BitmapFactory.decodeResource(res, resId, options);
+	}
+	
+	public static int calculateInSampleSize(
+            BitmapFactory.Options options, int reqWidth, int reqHeight) {
+    // Raw height and width of image
+    final int height = options.outHeight;
+    final int width = options.outWidth;
+    int inSampleSize = 1;
+
+    if (height > reqHeight || width > reqWidth) {
+
+        final int halfHeight = height / 2;
+        final int halfWidth = width / 2;
+
+        // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+        // height and width larger than the requested height and width.
+        while ((halfHeight / inSampleSize) > reqHeight
+                && (halfWidth / inSampleSize) > reqWidth) {
+            inSampleSize *= 2;
+        }
+    }
+
+    return inSampleSize;
+}
+	
 	@Override
 	public void finish() {
 	  Intent data = new Intent();
-	  int[] coords = new int[2];
-	  coords[0] = this.x;
-	  coords[1] = this.y;
-	  data.putExtra("coords",coords);
+
+	  if(this.currentBuilding != null)
+		  data.putExtra("Building",this.currentBuilding);
+	  else if(this.currentPicture != null)
+		  data.putExtra("Picture",this.currentPicture);
+	  
 	  setResult(result, data);
 	  super.finish();
 	} 
+	
+	public boolean isVectorInBoundaryBox(int[] vec,int x1, int y1, int x2, int y2)
+	{
+		
+		if((vec[0] < x1 * scalX && vec[1] < y1 * scalY) && (vec[0] > x2 * scalX && vec[1] > y2 * scalY ))
+			return true;
+		
+		return false;
+	}
+	
+	
+	public void initClickableObjects(Object[] objs)
+	{
+		Object obj= null;
+		if(objs!=null)
+		{
+			for(int i=0;i<objs.length;i++)
+			{
+				obj = objs[i];
+				if(obj instanceof Building )
+				{
+					Building b = (Building) obj;
+					buildings.add(b);
+				}
+			}
+
+		}
+		
+
+		   
+		
+	}
 
 }
