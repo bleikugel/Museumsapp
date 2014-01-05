@@ -8,10 +8,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapFactory.Options;
 import android.os.Bundle;
+import android.view.ViewGroup.LayoutParams;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 public class PictureInfoActivity extends Activity{
@@ -48,11 +50,16 @@ public class PictureInfoActivity extends Activity{
 		ImageView imageView = (ImageView) findViewById(R.id.imageView1);	
 		Options opts = new Options();
 		opts.inScaled = true;
-		opts.inSampleSize = 3;
+		opts.inSampleSize = 4;
 		Bitmap bm = BitmapFactory.decodeResource(getResources(), p.getPictureID(), opts);
 		
 		imageView.setImageBitmap(bm);
 		imageView.setScaleType(ScaleType.FIT_XY);
+		imageView.getLayoutParams().width = (int)getResources().getDisplayMetrics().widthPixels/2;
+		imageView.getLayoutParams().height = (int)getResources().getDisplayMetrics().heightPixels/2;
+		RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(imageView.getLayoutParams());
+		lp.setMargins(50, 50, 0, 0);
+		imageView.setLayoutParams(lp);
 		
 		TextView txt1 = (TextView) findViewById(R.id.textView1);	
 		txt1.setText(p.getName());

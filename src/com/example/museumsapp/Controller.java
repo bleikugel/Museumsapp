@@ -2,27 +2,16 @@ package com.example.museumsapp;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import android.app.ActionBar.LayoutParams;
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.Application;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
 import android.graphics.BitmapFactory.Options;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
 
 public class Controller extends Application{
 	
 	private int campusCode = 0x808;
 	private int hqCode = 0x809;
 	private int hoCode = 0x80A;
-	private double scX;
-	private double scY;
 	private int currCode = 0x808;
 	private int x,y;
 	private Activity currentActivity;
@@ -74,20 +63,56 @@ public class Controller extends Application{
         currentActivity.startActivityForResult(i,currCode);	
 	}
 	
+	public void showFloor(Floor floor)
+	{
+		currCode = floor.getUid();
+        Intent i = new Intent(currentActivity.getApplicationContext(), GenericActivity.class);
+        i.putExtra("Fullscreen", true);
+        i.putExtra("Floor", floor);
+        currentActivity.startActivityForResult(i,currCode);	
+	}
+	
+	// Hier bietet sich dann der Einsatz der Datenbank an, wenn denn mal eine da wäre...
 	public Building[] buildBuildings()
 	{
 		// Liste wuerde sich eigentlich anbieten...
-		Building[] builds = new Building[2];
+		Building[] builds = new Building[3];
+		List<Floor> floors =  new ArrayList<Floor>();
+		List<Picture> pictures = new ArrayList<Picture>();
+		
 		Options opts = new Options();
 		opts.inScaled = false;
 		
 		// Hauptgebaeude
 		Building b = new Building();
+		Floor f = new Floor();
 		
 		b.setUid(hqCode);
 		b.setName("Hauptgebauede");
 		b.setBoundarybox(new int[][]{{389,263},{276,121}});
 		b.setBitmapID(R.drawable.hauptgebaeude);
+		
+		// Etage setzen
+		f.setUid(0x0);
+		f.setName("Etage 1");
+		f.setBoundarybox(new int[][]{{100000000,100000000},{0,0}});
+		f.setBitmapID(R.drawable.hqfloor);
+		
+		// Bild setzen
+		Picture p = new Picture();
+		p.setName("Bild 1");
+		p.setCreator("Wer malt soetwas?!");
+		p.setDescription("Ich muss unbedingt mal herausfinden, zu welchen der Bilder die Einträge in der Excel-Tabelle gehören.");
+		p.setUid(231);
+		p.setPictureID(R.drawable.b5);
+		p.setxCoord(196);
+		p.setyCoord(271);
+		pictures.add(p);
+		f.setPictures(pictures);
+		
+		floors.add(f);
+		
+		b.setFloors(floors);
 		builds[0] = b;
 		
 		// Hoersaalgebaeude
@@ -97,16 +122,15 @@ public class Controller extends Application{
 		b.setBoundarybox(new int[][]{{576,177},{438,60}});
 		b.setBitmapID(R.drawable.hoersaalgebaeude);
 		
+        f = new Floor();
+		f.setUid(0x0);
+		f.setName("Etage 1");
+		f.setBoundarybox(new int[][]{{576,177},{438,60}});
+		f.setBitmapID(R.drawable.hoersaalgebaeude);
+		
 		// Bilder setzen
-		
-		List<Picture> pictures = new ArrayList<Picture>();
-		
-		//int[] Pictures = new int[] {R.drawable.b1,R.drawable.b2,R.drawable.b3};
-		//int[][] coords = new int[][] {{(int)(196 * scX / 1350),(int)(271 * scY / 538)},{(int)(380* scX / 1350),(int)(390 * scY / 538)},{(int)(1231 * scX / 1350),(int)(375 * scY / 538)}};
-		//i.putExtra("PictureCounter", Pictures.length);
-		//i.putExtra("Pictures", Pictures);
-		//i.putExtra("Coordinates", coords);
-		Picture p = new Picture();
+		pictures = new ArrayList<Picture>();
+		p = new Picture();
 		p.setName("Bild 1");
 		p.setCreator("..............");
 		p.setDescription("Hübsch, oder ?!");
@@ -136,10 +160,27 @@ public class Controller extends Application{
 		p.setyCoord(375);
 		pictures.add(p);
 		
-		b.setPictures(pictures);
-		
+		f.setPictures(pictures);
+		// Bei Gebaeuden mit nur einer Etage muss diese explizit gesetzt werden!
+		b.setCurrentFloor(f);
 		builds[1] = b;
 		
+		// Seminargebaeude
+		b = new Building();
+	 	f = new Floor();
+		
+		b.setUid(hqCode);
+		b.setName("Seminargebaeude");
+		b.setBoundarybox(new int[][]{{531,248},{462,204}});
+		b.setBitmapID(R.drawable.seminarbuilding);
+		
+		f.setUid(0x0);
+		f.setName("Etage 1");
+		f.setBoundarybox(new int[][]{{576,177},{438,60}});
+		f.setBitmapID(R.drawable.seminarbuilding);
+		b.setCurrentFloor(f);
+		
+		builds[2] = b;
 		return builds;
 		
 	}
@@ -157,44 +198,6 @@ public class Controller extends Application{
 		return new int[] {this.x,this.y};
 	}
 	
-	// Gibt das jeweilige Gebaeude, codiert als Nummer, zurueck.
-	// Erfassung erfolgt anhand einer Bounding-Box. 
-	// Alle Gebauede sind in einer Rechteckstruktur erfasst.
-	// Die Koordinaten muessen entsprechend dem Original skaliert werden. (800 x 600)
-	// Rueckgabewerte:
-	//				   -1 - Kein bekanntes Gebaeude
-	//					0 - Hauptgebaeude
-	//					1 - Wohnhaus 1
-	//					2 - Wohnhaus 2
-	//					3 - Wohnhaus 3
-	//					4 - Wohnhaus 4
-	//					5 - Wohnhaus 5
-	//					6 - Wohnhaus 6
-	//					7 - Werkstatt
-	//					8 - Hoersaalgebaeude
-	public int getCurrentBuildingByCoordinates(int x, int y,double scalx,double scaly)
-	{
-		
-		if((x < 389 * scalx && y < 263 * scaly) && (x > 276 * scalx && y > 121 * scaly ))
-			return 0;
-		else if((x < 576 * scalx && y < 177 * scaly) && (x > 438 * scalx && y > 60 * scaly ))
-			return 8;
-		
-		return -1;
-	}
-	
-	public int getCurrentPictureByCoordinates(int x, int y,double scalx,double scaly)
-	{
-		
-		if((x < 389 * scalx && y < 263 * scaly) && (x > 276 * scalx && y > 121 * scaly ))
-			return 0;
-		else if((x < 576 * scalx && y < 177 * scaly) && (x > 438 * scalx && y > 60 * scaly ))
-			return 8;
-		
-		return -1;
-	}
-	
-	
 	public boolean showCurrentBuildingOrPicture(int state, Intent data)
 	{
 	    if (data.hasExtra("Building")) 
@@ -203,33 +206,18 @@ public class Controller extends Application{
 
 	    	if(building instanceof Building)
 	    	{
-	    	//setCurrentCoordinates(coords[0], coords[1]);
 	    		showBuilding((Building)building);
-	    	/*
-	    		if(state == campusCode)
-	    		{
-	    	
-	    			if(curr == 0)
-	    				showBuilding(R.drawable.hauptgebaeude,hqCode);
-	    			else if(curr == 8)
-	    			{
-	    				this.currCode = hoCode;
-	    				showBuildingWithPictures();
-	    			}
-	    			else showBuilding(R.drawable.campusplan,campusCode);
-	    		}
-	    		else if(state == hoCode)
-	    		{
-	    			int curr = (getCurrentPictureByCoordinates(coords[0], coords[1], scX / 800, scY / 600));
-	    			curr = -1;
-	    			showBuildingWithPictures();
-	    			
-	    		}
-	    	return true;
-	    	*/
-	    	return true;
+	    		return true;
 	    	}
 	    	else return false;
+	    }
+	    else if(data.hasExtra("Floor"))
+	    {
+	    	Object floor = (Object)data.getSerializableExtra("Floor");
+	    	if(floor instanceof Floor)
+	    	{
+	    		showFloor((Floor)floor);
+	    	}
 	    }
 	    else if(data.hasExtra("Picture"))
 	    {
@@ -251,10 +239,5 @@ public class Controller extends Application{
         currentActivity.startActivityForResult(i,currCode);	
 	}
 	
-	public void setScales(double x, double y)
-	{
-		this.scX = x;
-		this.scY = y;
-	}
 
 }

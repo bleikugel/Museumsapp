@@ -3,21 +3,22 @@ package com.example.museumsapp;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-public class Building implements Serializable{
-	/**
-	 * Eine einfache Klasse fuer Gebaeude, welches aus den dazugehoerigen Etagen besteht.
-	 */
 
-	private static final long serialVersionUID = -8525177572661770489L;
+public class Floor implements Serializable{
+
+	/**
+	 * Eine Klasse fuer Etagen.
+	 */
+	private static final long serialVersionUID = -5769582552158037038L;
+	
 	private int uid;
 	private String name;
 	private int bmID;
 	private int[][] boundarybox;
-	private List<Floor> floors;
-	private Floor currentFloor;
-	public Building()
+	private List<Picture> pictures;
+	public Floor()
 	{
-		floors = new ArrayList<Floor>();
+		pictures = new ArrayList<Picture>();
 	}
 
 	public void setUid(int uid) {
@@ -52,21 +53,12 @@ public class Building implements Serializable{
 		return bmID;
 	}
 
-	public void setFloors(List<Floor> floors) {
-		this.floors = floors;
+	public void setPictures(List<Picture> pictures) {
+		this.pictures = pictures;
 	}
 
-	public List<Floor> getFloors() {
-		return this.floors;
+	public List<Picture> getPictures() {
+		return pictures;
 	}
 
-	public void setCurrentFloor(Floor currentFloor) {
-		this.currentFloor = currentFloor;
-	}
-
-	public Floor getCurrentFloor() {
-		return currentFloor;
-	}
-	
-	
 }

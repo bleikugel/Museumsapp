@@ -37,6 +37,7 @@ public class GenericActivity extends Activity {
 	private int result;
 	private List<Building> buildings;
 	private Building currentBuilding;
+	private Floor currentFloor;
 	private Picture currentPicture;
 	
 	@Override
@@ -49,6 +50,7 @@ public class GenericActivity extends Activity {
 		this.scX = (double)getResources().getDisplayMetrics().widthPixels;
 		this.scY = (double)getResources().getDisplayMetrics().heightPixels;
 		this.currentBuilding = null;
+		this.currentFloor = null;
 		this.currentPicture = null;
 		
 		Intent intent = getIntent();
@@ -71,6 +73,15 @@ public class GenericActivity extends Activity {
 				setBuildingPicture(((Building)obj).getBitmapID());
 			}
 		}
+		else if(intent.getSerializableExtra("Floor") != null)
+		{
+			Object obj =  (Object) intent.getSerializableExtra("Floor");
+			if(obj instanceof Floor)
+			{
+				currentFloor = (Floor) obj;
+				setBuildingPicture(((Floor)obj).getBitmapID());
+			}
+		}
 		
 	    if(intent.getBooleanExtra("BuildingsBool", false))
 		{
@@ -80,10 +91,14 @@ public class GenericActivity extends Activity {
 		
 		
 		// Die einzelnen Bilder setzen, falls vorhanden
-		if(currentBuilding != null && currentBuilding.getPictures() != null && currentBuilding.getPictures().size() > 0)
+		if(currentFloor != null || (currentBuilding != null && currentBuilding.getCurrentFloor() != null))
 		{
-			for(Picture p : currentBuilding.getPictures())
-				setPicture(p);
+			if(currentFloor != null)
+				for(Picture p : currentFloor.getPictures())
+					setPicture(p);
+			else
+				for(Picture p : currentBuilding.getCurrentFloor().getPictures())
+					setPicture(p);
 			
 		}
 	}
@@ -122,17 +137,44 @@ public class GenericActivity extends Activity {
 	    	}
 	    }
 	    
-	    if(this.currentBuilding != null)
-    		for(Picture p : this.currentBuilding.getPictures())
-    		{
-	    		if(p.getBoundarybox() != null && isVectorInBoundaryBox(vec, p.getBoundarybox()[0][0], p.getBoundarybox()[0][1], p.getBoundarybox()[1][0], p.getBoundarybox()[1][1]))
+	    if(this.currentBuilding != null && this.currentBuilding.getCurrentFloor() == null)
+	    {
+	    	for(Floor f : currentBuilding.getFloors())
+	    	{
+	    		if(isVectorInBoundaryBox(vec, f.getBoundarybox()[0][0], f.getBoundarybox()[0][1], f.getBoundarybox()[1][0], f.getBoundarybox()[1][1]))
 	    		{
 	    		    this.result = RESULT_OK;
-	    		    this.currentBuilding = null;
-	    		    this.currentPicture = p;
+	    		    this.currentFloor = f;
 	    		    this.finish();
 	    		}
-    		}
+	    		
+	    	}    	
+	    }	    
+	    else if(this.currentFloor != null  ||  (this.currentBuilding != null && this.currentBuilding.getCurrentFloor() != null))
+	    	if(this.currentFloor != null)
+	    		for(Picture p : this.currentFloor.getPictures())
+    			{
+	    			if(p.getBoundarybox() != null && isVectorInBoundaryBox(vec, p.getBoundarybox()[0][0], p.getBoundarybox()[0][1], p.getBoundarybox()[1][0], p.getBoundarybox()[1][1]))
+	    			{
+	    		    	this.result = RESULT_OK;
+	    		    	this.currentBuilding = null;
+	    		    	this.currentFloor = null;
+	    		    	this.currentPicture = p;
+	    		    	this.finish();
+	    			}
+    			}
+	    	else
+	    		for(Picture p : this.currentBuilding.getCurrentFloor().getPictures())
+	    		{
+		    		if(p.getBoundarybox() != null && isVectorInBoundaryBox(vec, p.getBoundarybox()[0][0], p.getBoundarybox()[0][1], p.getBoundarybox()[1][0], p.getBoundarybox()[1][1]))
+		    		{
+		    		    this.result = RESULT_OK;
+		    		    this.currentBuilding = null;
+		    		    this.currentFloor = null;
+		    		    this.currentPicture = p;
+		    		    this.finish();
+		    		}
+	    		}
 	    	
 	return true;
 	}
@@ -164,21 +206,24 @@ public class GenericActivity extends Activity {
 	{
 		if(p.getPictureID() == -1) return;
 		FrameLayout.LayoutParams params;
-		params = new FrameLayout.LayoutParams(100, 100);
+		params = new FrameLayout.LayoutParams(64, 64);
 		params.leftMargin = (int)(p.getxCoord() * scalX);
 		params.topMargin = (int)(p.getyCoord() * scalY);
 		
 		ImageView image = new ImageView(this.getApplicationContext());
 		try
 		{
-			image.setImageBitmap(decodeSampledBitmapFromResource(getResources(), p.getPictureID(), 100, 100));
-			p.setBoundarybox(new int[][]{{p.getxCoord()+100,p.getyCoord()+100},{p.getxCoord(),p.getyCoord()}});
+			image.setImageBitmap(decodeSampledBitmapFromResource(getResources(), p.getPictureID(), 64, 64));
+			p.setBoundarybox(new int[][]{{p.getxCoord()+64,p.getyCoord()+64},{p.getxCoord(),p.getyCoord()}});
 		}
 		catch (OutOfMemoryError e)
 		{
 			System.gc();
-			image.setImageBitmap(decodeSampledBitmapFromResource(getResources(), p.getPictureID(), 50, 50));	
-			p.setBoundarybox(new int[][]{{p.getxCoord()+50,p.getyCoord()+50},{p.getxCoord(),p.getyCoord()}});
+			params = new FrameLayout.LayoutParams(32, 32);
+			params.leftMargin = (int)(p.getxCoord() * scalX);
+			params.topMargin = (int)(p.getyCoord() * scalY);
+			image.setImageBitmap(decodeSampledBitmapFromResource(getResources(), p.getPictureID(), 32, 32));	
+			p.setBoundarybox(new int[][]{{p.getxCoord()+64,p.getyCoord()+64},{p.getxCoord(),p.getyCoord()}});
 		}
 		image.setScaleType(ScaleType.FIT_XY);
 
@@ -236,8 +281,10 @@ public class GenericActivity extends Activity {
 	public void finish() {
 	  Intent data = new Intent();
 
-	  if(this.currentBuilding != null)
+	  if(this.currentBuilding != null && this.currentFloor == null)
 		  data.putExtra("Building",this.currentBuilding);
+	  else if(this.currentBuilding != null && this.currentFloor != null)
+		  data.putExtra("Floor",this.currentFloor);
 	  else if(this.currentPicture != null)
 		  data.putExtra("Picture",this.currentPicture);
 	  
